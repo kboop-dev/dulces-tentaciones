@@ -337,7 +337,7 @@ nav.scrolled{background:rgba(255,240,244,0.95)}
 /* ── CART PANEL ── */
 .cart-panel{
   position:fixed;top:0;right:-110%;width:min(380px,100vw);
-  height:100vh;background:#fff;
+  height:100vh;height:100dvh;background:#fff;
   border-left:2px solid var(--rosa-claro);
   z-index:1050;display:flex;flex-direction:column;
   transition:right .35s cubic-bezier(.4,0,.2,1);
@@ -365,11 +365,21 @@ nav.scrolled{background:rgba(255,240,244,0.95)}
 .c-item-price{font-weight:700;color:var(--rojo);font-size:clamp(0.75rem,2vw,0.88rem)}
 .c-item-rm{
   background:none;border:none;color:rgba(24,10,10,.25);
-  cursor:pointer;font-size:clamp(0.8rem,2vw,0.9rem);align-self:center;
-  transition:color .2s;
+  cursor:pointer;font-size:clamp(0.8rem,2vw,0.9rem);align-self:flex-start;
+  transition:color .2s;padding:4px;
 }
 .c-item-rm:hover{color:var(--rojo)}
-.cart-ftr{padding:clamp(14px,3vh,18px) clamp(16px,4vw,22px);border-top:1px solid var(--rosa-claro)}
+.c-item-qty{display:flex;align-items:center;gap:8px;margin-top:6px}
+.c-qty-btn{
+  width:26px;height:26px;border-radius:50%;
+  border:1.5px solid var(--rosa-claro);background:#FFF5F7;
+  color:var(--negro);font-size:.7rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.c-qty-btn:active{border-color:var(--rojo);background:rgba(232,16,42,.07)}
+.c-qty-num{font-size:.82rem;font-weight:700;min-width:16px;text-align:center}
+.cart-ftr{padding:clamp(14px,3vh,18px) clamp(16px,4vw,22px) calc(clamp(14px,3vh,18px) + env(safe-area-inset-bottom,0px));border-top:1px solid var(--rosa-claro);flex-shrink:0;background:#fff}
 .cart-total-row{
   display:flex;justify-content:space-between;align-items:center;
   margin-bottom:clamp(10px,2vh,14px);
@@ -402,10 +412,10 @@ nav.scrolled{background:rgba(255,240,244,0.95)}
 }
 .qr-card h3{font-family:'Pacifico',cursive;color:var(--rojo);font-size:clamp(1.1rem,3vw,1.4rem);margin-bottom:6px}
 .qr-card p{font-size:clamp(0.65rem,1.8vw,0.78rem);color:rgba(24,10,10,.5);margin-bottom:clamp(12px,3vh,18px)}
-#qr-canvas{
+#qr-img{
   border-radius:clamp(10px,2.5vw,14px);border:3px solid var(--rosa-claro);
   background:#fff;margin:0 auto clamp(14px,3vh,20px);display:block;
-  max-width:100%;height:auto;
+  max-width:200px;width:100%;height:auto;
 }
 .qr-wa-btn{
   width:100%;padding:clamp(10px,2.5vh,13px);background:#25D366;border:none;border-radius:clamp(10px,2.5vw,14px);
@@ -890,7 +900,7 @@ nav.scrolled{background:rgba(255,240,244,0.95)}
   <div class="qr-card">
     <h3>🔱 Pedido listo</h3>
     <p>Muestra este QR o toca el botón para enviarlo por WhatsApp</p>
-    <canvas id="qr-canvas" width="200" height="200"></canvas>
+    <img id="qr-img" src="" alt="QR de tu pedido" style="width:200px;height:200px;border-radius:12px;border:3px solid var(--rosa-claro);display:none;margin:0 auto 16px;background:#fff"/>
     <button class="qr-wa-btn" onclick="openWA()"><i class="fab fa-whatsapp"></i> Enviar por WhatsApp</button>
     <button class="qr-close-btn" onclick="closeQR()">Cerrar</button>
   </div>
@@ -899,7 +909,6 @@ nav.scrolled{background:rgba(255,240,244,0.95)}
 <!-- WA FAB -->
 <button class="wa-fab" onclick="openWADirect()" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></button>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 /* ── CONFIG ── */
 const WA = '7298327623'; // ← PON TU NÚMERO AQUÍ
@@ -997,6 +1006,11 @@ function addToCart(){
   renderCart();closeModal();toast(p.name+' agregado 🛍️');
 }
 function removeItem(i){cart.splice(i,1);renderCart();}
+function cartChgQty(i,d){
+  if(!cart[i])return;
+  cart[i].qty=Math.max(1,cart[i].qty+d);
+  renderCart();
+}
 function renderCart(){
   const total=cart.reduce((s,c)=>s+c.price*c.qty,0);
   const count=cart.reduce((s,c)=>s+c.qty,0);
@@ -1013,10 +1027,15 @@ function renderCart(){
     el.innerHTML=`<img src="${item.img}" alt="${item.name}"/>
     <div class="c-item-info">
       <div class="c-item-name">${item.name}</div>
-      <div class="c-item-sub">${item.size} · x${item.qty}</div>
-      <div class="c-item-price">$${(item.price*item.qty).toFixed(2)}</div>
+      <div class="c-item-sub">${item.size}</div>
+      <div class="c-item-qty">
+        <button class="c-qty-btn" onclick="cartChgQty(${i},-1)"><i class="fas fa-minus"></i></button>
+        <span class="c-qty-num">${item.qty}</span>
+        <button class="c-qty-btn" onclick="cartChgQty(${i},1)"><i class="fas fa-plus"></i></button>
+        <span class="c-item-price" style="margin-left:4px">$${(item.price*item.qty).toFixed(2)}</span>
+      </div>
     </div>
-    <button class="c-item-rm" onclick="removeItem(${i})"><i class="fas fa-trash"></i></button>`;
+    <button class="c-item-rm" onclick="removeItem(${i})" aria-label="Eliminar"><i class="fas fa-trash"></i></button>`;
     list.appendChild(el);
   });
 }
@@ -1034,25 +1053,23 @@ function checkout(){
   const total=cart.reduce((s,c)=>s+c.price*c.qty,0);
   qrText=`Hola Dulces Tentaciones 🔱\nMe gustaría hacer este pedido:\n\n${lines}\n\nTOTAL: $${total.toFixed(2)}\n\n¡Gracias! 💖`;
 
-  // QR
-  const canvas=document.getElementById('qr-canvas');
-  const tmp=document.createElement('div');
-  try{
-    new QRCode(tmp,{text:qrText,width:200,height:200,colorDark:'#180A0A',colorLight:'#FFFFFF'});
-    setTimeout(()=>{
-      const img=tmp.querySelector('img');
-      if(img){const i2=new Image();i2.onload=()=>canvas.getContext('2d').drawImage(i2,0,0,200,200);i2.src=img.src;}
-      else{const c2=tmp.querySelector('canvas');if(c2)canvas.getContext('2d').drawImage(c2,0,0,200,200);}
-    },150);
-  }catch(e){
-    const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);
-    ctx.fillStyle='#180A0A';ctx.font='11px Poppins';ctx.textAlign='center';
-    ctx.fillText('Pedido generado',100,95);ctx.fillText('¡Escríbenos!',100,115);
-  }
+  // QR via imagen URL (funciona en todos los móviles sin canvas issues)
+  const qrData=encodeURIComponent(qrText);
+  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&color=180A0A&bgcolor=FFFFFF&margin=8`;
+  const qrImg=document.getElementById('qr-img');
+  qrImg.src=qrUrl;
+  qrImg.style.display='block';
+
   document.getElementById('qr-backdrop').classList.add('active');
 }
-function openWA(){window.open(`https://wa.me/${WA}?text=${encodeURIComponent(qrText)}`,'_blank');document.getElementById('qr-backdrop').classList.remove('active');}
+function openWA(){
+  window.open(`https://wa.me/${WA}?text=${encodeURIComponent(qrText)}`,'_blank');
+  document.getElementById('qr-backdrop').classList.remove('active');
+  // Vaciar carrito al confirmar envío
+  cart=[];
+  renderCart();
+  toast('¡Pedido enviado! El carrito se vació 🎉');
+}
 function closeQR(){document.getElementById('qr-backdrop').classList.remove('active');}
 function openWADirect(){window.open(`https://wa.me/${WA}?text=${encodeURIComponent('Hola Dulces Tentaciones 🔱 ¡quiero hacer un pedido!')}`,'_blank');}
 
